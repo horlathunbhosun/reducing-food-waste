@@ -1,4 +1,4 @@
-module github.com/horlathunbhosun/wastewarrior-api
+module github.com/horlathunbhosun/reducing-food-waste
 
 go 1.21.5
 
