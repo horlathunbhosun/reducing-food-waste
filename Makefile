@@ -1,5 +1,9 @@
+
+include .env
+export
+
 run:
-	@go run ./cmd/app/main.go
+	@go run ./api/main.go
 
 
 ### build: Build binary

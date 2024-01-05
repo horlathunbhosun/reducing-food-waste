@@ -2,7 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/horlathunbhosun/wastewarrior-api/pkg/response"
+	"github.com/horlathunbhosun/reducing-food-waste/api/handlers"
+	"github.com/horlathunbhosun/reducing-food-waste/pkg/response"
 	"net/http"
 )
 
@@ -29,5 +30,7 @@ func RegisterRoutes(server *gin.Engine) {
 		responseBody.Status = true
 		c.JSON(http.StatusOK, responseBody)
 	})
+	v1.POST("/register", handlers.Signup)
+
 	v1.GET("/products")
 }

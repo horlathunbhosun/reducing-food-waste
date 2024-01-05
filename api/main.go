@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/horlathunbhosun/wastewarrior-api/internal/database"
-	"github.com/horlathunbhosun/wastewarrior-api/internal/routes"
+	"github.com/horlathunbhosun/reducing-food-waste/database"
+	"github.com/horlathunbhosun/reducing-food-waste/routes"
 	"log"
 )
 

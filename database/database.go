@@ -2,8 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"github.com/horlathunbhosun/wastewarrior-api/internal/config"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/horlathunbhosun/reducing-food-waste/config"
 	"github.com/joho/godotenv"
+
 	"log"
 )
 
@@ -17,6 +19,7 @@ func InitDB() {
 	}
 	connStr, dbServer := config.ConnectionStringAndDriver()
 
+	println(connStr, dbServer)
 	DB, err = sql.Open(dbServer, connStr)
 
 	if err != nil {
@@ -57,17 +60,37 @@ func createUsersTable() {
 	}
 }
 
+func createUserTokensTable() {
+	query := `
+	CREATE TABLE IF NOT EXISTS user_tokens (
+      id INTEGER PRIMARY KEY AUTO_INCREMENT,
+	user_id INTEGER NOT NULL,
+    email VARCHAR(30) NOT NULL,
+    token VARCHAR(50) UNIQUE ,
+	expire_at DATETIME NOT NULL,
+    date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
+	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+	)`
+	_, err := DB.Exec(query)
+	if err != nil {
+		log.Fatalln(err)
+		panic("Can not users table")
+	}
+}
+
 func createPartnersTable() {
 	query := `
 	CREATE TABLE IF NOT EXISTS partners (
 	  id INTEGER PRIMARY KEY AUTO_INCREMENT,
 	business_number VARCHAR(30) NOT NULL,
 	user_id INTEGER NOT NULL,   
-	logo VARCHAR(50) UNIQUE,
-	address VARCHAR(40) UNIQUE,
+	logo VARCHAR(50) NULL,
+	address VARCHAR(40) NULL,
 	date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	)`
 	_, err := DB.Exec(query)
 	if err != nil {
@@ -99,9 +122,8 @@ func createMagicBagsTable() {
 	  partner_id INTEGER NOT NULL,
 	date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE
-
-	)`
+	FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE
+	    )`
 	_, err := DB.Exec(query)
 	if err != nil {
 		log.Fatalln(err)
@@ -118,10 +140,9 @@ func createTransactionsTable() {
 	user_id INTEGER NOT NULL,
 	date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	FOREIGN KEY (magic_bag_id) REFERENCES magic_bags(magic_bag_id) ON DELETE CASCADE,
-	FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-	UNIQUE KEY waste_warrior_purchase_unique (user_id, magic_bag_id, date_created),
-
+	FOREIGN KEY (magic_bag_id) REFERENCES magic_bags(id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	UNIQUE KEY waste_warrior_purchase_unique (user_id, magic_bag_id, date_created)
 	)`
 	_, err := DB.Exec(query)
 	if err != nil {
@@ -138,9 +159,8 @@ func createMagicBagProductsTable() {
     	product_id INTEGER NOT NULL,
     	date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
     	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    	FOREIGN KEY (magic_bag_id) REFERENCES magic_bags(magic_bag_id) ON DELETE CASCADE,
-    	FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE   
-)`
+    	FOREIGN KEY (magic_bag_id) REFERENCES magic_bags(id) ON DELETE CASCADE,
+    	FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE   )`
 
 	_, err := DB.Exec(query)
 	if err != nil {
@@ -153,13 +173,12 @@ func createFeedbackTable() {
 	query := `CREATE TABLE IF NOT EXISTS feedback (
 		id INTEGER PRIMARY KEY AUTO_INCREMENT,
 		rating  INTEGER DEFAULT 0,
-    	comment TEXT
+    	comment LONGTEXT  NULL,
 		transaction_id INTEGER NOT NULL,
 		date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 		date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		FOREIGN KEY (transaction_id) REFERENCES transaction(transaction_id) ON DELETE CASCADE
-)`
-
+		FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+    )`
 	_, err := DB.Exec(query)
 	if err != nil {
 		log.Fatalln(err)
