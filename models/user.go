@@ -8,6 +8,7 @@ import (
 	"github.com/horlathunbhosun/reducing-food-waste/validator"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,6 +31,7 @@ type User struct {
 	UserType    UserType `json:"user_type"`
 	DateCreated time.Time
 	DateUpdated time.Time
+	wg          sync.WaitGroup
 }
 
 type UserToken struct {
@@ -64,7 +66,7 @@ func ValidateUserData(v *validator.Validator, user *User) {
 	v.Check(user.UserType != "", "user_type", "must be provided")
 
 }
-func (user *User) Save() error {
+func (u *User) Save() error {
 	query := `
 	INSERT INTO users (fullname, email, password, phone_number, user_type)
 	VALUES (?, ?, ?, ?, ?)
@@ -77,15 +79,15 @@ func (user *User) Save() error {
 
 	defer stmt.Close()
 
-	hashPassword, _ := utility.HashPassword(user.Password)
+	hashPassword, _ := utility.HashPassword(u.Password)
 
-	result, err := stmt.Exec(user.FullName, user.Email, hashPassword, user.PhoneNumber, user.UserType)
+	result, err := stmt.Exec(u.FullName, u.Email, hashPassword, u.PhoneNumber, u.UserType)
 	if err != nil {
 		return err
 	}
 
 	id, err := result.LastInsertId()
-	user.Id = id
+	u.Id = id
 
 	fmt.Println(err)
 	if err != nil {
@@ -100,7 +102,7 @@ func (user *User) Save() error {
 	return nil
 }
 
-func (ut *User) CreateToken() error {
+func (u *User) CreateToken() error {
 	query := `
 	INSERT INTO user_tokens (user_id, email, token, expire_at)
 	VALUES (?, ?, ?, ?)
@@ -119,11 +121,23 @@ func (ut *User) CreateToken() error {
 	expiredAt := time.Now().Add(3 * 24 * time.Hour)
 
 	userToken := UserToken{
-		UserID:   ut.Id,
-		Email:    ut.Email,
+		UserID:   u.Id,
+		Email:    u.Email,
 		Token:    token,
 		ExpireAt: expiredAt,
 	}
+
+	u.background(func() {
+		data := map[string]interface{}{
+			"userName": u.FullName,
+			"email":    u.Email,
+			"Code":     userToken.Token,
+			"ExpireAt": expiredAt,
+		}
+		fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
+		//mailer.New('')
+		//mailer.Mailer.Send(u.Email, 'user_token.html')
+	})
 
 	result, err := stmt.Exec(userToken.UserID, userToken.Email, userToken.Token, userToken.ExpireAt)
 	if err != nil {
@@ -138,4 +152,21 @@ func (ut *User) CreateToken() error {
 		return err
 	}
 	return nil
+}
+
+func (u *User) background(fn func()) {
+	u.wg.Add(1)
+
+	go func() {
+
+		defer u.wg.Done()
+		// Recover any panic.
+		defer func() {
+			if err := recover(); err != nil {
+				_ = fmt.Errorf("%s", err)
+			}
+		}()
+
+		fn()
+	}()
 }

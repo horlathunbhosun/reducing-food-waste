@@ -35,7 +35,7 @@ func Signup(ctx *gin.Context) {
 		return
 	}
 
-	//err = user.Save()
+	err = user.Save()
 	//if err != nil {
 	//	fmt.Println(err)
 	//	ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not save user. Try again"})
