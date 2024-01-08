@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/horlathunbhosun/reducing-food-waste/database"
+	"github.com/horlathunbhosun/reducing-food-waste/mailer"
 	"github.com/horlathunbhosun/reducing-food-waste/pkg/utility"
 	"github.com/horlathunbhosun/reducing-food-waste/validator"
 	"math/rand"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -135,9 +138,23 @@ func (u *User) CreateToken() error {
 			"ExpireAt": expiredAt,
 		}
 		fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
-		//mailer.New('')
-		//mailer.Mailer.Send(u.Email, 'user_token.html')
+
+		host := os.Getenv("MAIL_HOST")
+		portConv := os.Getenv("MAIL_PORT")
+		port, err := strconv.Atoi(portConv)
+		if err != nil {
+			return
+		}
+		mail := mailer.New(host, port, os.Getenv("MAIL_USERNAME"), os.Getenv("MAIL_PASSWORD"), os.Getenv("MAIL_SENDER"))
+		err = mail.Send(u.Email, "user_token.html", data)
+		if err != nil {
+			return
+		}
 	})
+	//err := mailer.Mailer.Send()
+	//if err != nil {
+	//	return err
+	//}
 
 	result, err := stmt.Exec(userToken.UserID, userToken.Email, userToken.Token, userToken.ExpireAt)
 	if err != nil {

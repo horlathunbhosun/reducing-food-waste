@@ -33,7 +33,7 @@ func New(host string, port int, username, password, sender string) Mailer {
 // Define a Send() method on the Mailer type. This takes the recipient email address
 // as the first parameter, the name of the file containing the templates, and any
 // dynamic data for the templates as an interface{} parameter.
-func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
+func (m Mailer) Send(recipient string, templateFile string, data interface{}) error {
 
 	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
