@@ -20,14 +20,14 @@ var ErrDuplicateEmail = errors.New("duplicate email")
 type UserType string
 
 const (
-	ADMIN    UserType = "admin"
-	PARTNERS UserType = "partner"
-	CUSTOMER UserType = "customer"
+	ADMIN        UserType = "admin"
+	PARTNERS     UserType = "partner"
+	WASTEWARRIOR UserType = "waste_warrior"
 )
 
 type User struct {
 	Id          int64    `json:"id"`
-	FullName    string   `json:"full_name"`
+	FullName    string   `json:"fullname"`
 	Email       string   `json:"email"`
 	Password    string   `json:"password"`
 	PhoneNumber string   `json:"phone_number"`
@@ -58,15 +58,22 @@ func ValidatePasswordPlaintext(v *validator.Validator, password string) {
 	v.Check(len(password) <= 72, "password", "must not be more than 72 bytes long")
 }
 
+func ValidateUserType(v *validator.Validator, user_type UserType) {
+	v.Check(user_type != "", "user_type", "must be provided")
+	v.Check(user_type == "admin" || user_type == "partners" || user_type == "waste_warrior", "user_type", "The select user type is not the valid user type")
+
+}
+
 func ValidateUserData(v *validator.Validator, user *User) {
 	v.Check(user.FullName != "", "fullname", "must be provided")
 	v.Check(len(user.FullName) <= 500, "fullname", "must not be more than 500 bytes long")
 
 	ValidateEmail(v, user.Email)
 	ValidatePasswordPlaintext(v, user.Password)
+	ValidateUserType(v, user.UserType)
 	v.Check(user.PhoneNumber != "", "phone_number", "must be provided")
 	v.Check(len(user.PhoneNumber) <= 20, "phone_number", "must not be more than 20 bytes long")
-	v.Check(user.UserType != "", "user_type", "must be provided")
+	//v.Check(user.UserType != "", "user_type", "must be provided")
 
 }
 func (u *User) Save() error {
@@ -91,6 +98,11 @@ func (u *User) Save() error {
 
 	id, err := result.LastInsertId()
 	u.Id = id
+
+	err = u.CreateToken()
+	if err != nil {
+		return err
+	}
 
 	fmt.Println(err)
 	if err != nil {
@@ -130,6 +142,9 @@ func (u *User) CreateToken() error {
 		ExpireAt: expiredAt,
 	}
 
+	fmt.Println("GOtten here")
+	fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
+
 	u.background(func() {
 		data := map[string]interface{}{
 			"userName": u.FullName,
@@ -138,6 +153,7 @@ func (u *User) CreateToken() error {
 			"ExpireAt": expiredAt,
 		}
 		fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
+		fmt.Println("GOtten here2")
 
 		host := os.Getenv("MAIL_HOST")
 		portConv := os.Getenv("MAIL_PORT")
@@ -148,6 +164,7 @@ func (u *User) CreateToken() error {
 		mail := mailer.New(host, port, os.Getenv("MAIL_USERNAME"), os.Getenv("MAIL_PASSWORD"), os.Getenv("MAIL_SENDER"))
 		err = mail.Send(u.Email, "user_token.html", data)
 		if err != nil {
+			fmt.Println(err)
 			return
 		}
 	})

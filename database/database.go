@@ -34,6 +34,7 @@ func InitDB() {
 
 func createTables() {
 	createUsersTable()
+	createUserTokensTable()
 	createPartnersTable()
 	createProductsTable()
 	createMagicBagsTable()
@@ -47,7 +48,7 @@ func createUsersTable() {
 	CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTO_INCREMENT,
     fullname VARCHAR(30) NOT NULL,
-    email VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE,
     phone_number VARCHAR(40) UNIQUE,
     user_type ENUM('waste_warrior', 'partners', 'admin') NOT NULL,
     date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
