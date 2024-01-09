@@ -206,26 +206,27 @@ func (u *User) background(fn func()) {
 }
 
 func (u *User) VerifyToken(token int) {
+	// verify token
 
 }
 
-func (u *User) ValidateUserCredential() error {
-	query := "SELECT id,password FROM users WHERE email=?"
-
-	row := database.DB.QueryRow(query, u.Email)
-
-	var retrievedPassword string
-	err := row.Scan(&u.ID, &retrievedPassword)
-	if err != nil {
-		return errors.New("credential invalid")
-	}
-
-	passwordIsValid := utility.CompareHashedPassword(u.Password, retrievedPassword)
-
-	if !passwordIsValid {
-		return errors.New("credential invalid")
-	}
-
-	return nil
-
-}
+//func (u *User) ValidateUserCredential() error {
+//	query := "SELECT id,password FROM users WHERE email=?"
+//
+//	row := database.DB.QueryRow(query, u.Email)
+//
+//	var retrievedPassword string
+//	err := row.Scan(&u.ID, &retrievedPassword)
+//	if err != nil {
+//		return errors.New("credential invalid")
+//	}
+//
+//	passwordIsValid := utility.CompareHashedPassword(u.Password, retrievedPassword)
+//
+//	if !passwordIsValid {
+//		return errors.New("credential invalid")
+//	}
+//
+//	return nil
+//
+//}
