@@ -43,5 +43,10 @@ func Signup(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, responseBody)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Registration successful", "data": user})
+	responseBody.Error = false
+	responseBody.Message = "Registration successful"
+	responseBody.Status = true
+	responseBody.Data = user
+
+	ctx.JSON(http.StatusCreated, responseBody)
 }
