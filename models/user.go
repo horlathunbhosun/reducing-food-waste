@@ -190,9 +190,7 @@ func (u *User) CreateToken() error {
 
 func (u *User) background(fn func()) {
 	u.wg.Add(1)
-
 	go func() {
-
 		defer u.wg.Done()
 		// Recover any panic.
 		defer func() {
