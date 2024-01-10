@@ -16,3 +16,7 @@ type MagicBagItem struct {
 	MagicBagID int64 `json:"magic_bag_id"`
 	ProductID  int64 `json:"product_id"`
 }
+
+func SaveMagicBag() {
+
+}

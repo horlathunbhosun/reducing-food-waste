@@ -10,3 +10,7 @@ type Feedback struct {
 	DateUpdated   time.Time
 	TransactionID int64 `json:"transaction_id"`
 }
+
+func save() {
+
+}
