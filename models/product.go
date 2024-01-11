@@ -8,3 +8,11 @@ type Product struct {
 	DateCreated time.Time
 	DateUpdated time.Time
 }
+
+func (p *Product) SaveProduct() {
+
+}
+
+func (p *Product) getProductByID(id int64) {
+
+}

@@ -11,3 +11,7 @@ type Partner struct {
 	DateUpdated time.Time
 	UserID      int64 `json:"user_id"`
 }
+
+func (p *Partner) SavePartner() {
+
+}
