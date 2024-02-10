@@ -7,6 +7,7 @@ import (
 	"github.com/horlathunbhosun/reducing-food-waste/pkg/response"
 	"github.com/horlathunbhosun/reducing-food-waste/validator"
 	"net/http"
+	"strconv"
 )
 
 func Signup(ctx *gin.Context) {
@@ -49,4 +50,38 @@ func Signup(ctx *gin.Context) {
 	responseBody.Data = user
 
 	ctx.JSON(http.StatusCreated, responseBody)
+}
+
+func VerificationToken(ctx *gin.Context) {
+	var user models.User
+	var responseBody response.JsonResponse
+
+	tokenStr := ctx.Param("token")
+	token, err := strconv.Atoi(tokenStr)
+	if err != nil {
+		responseBody.Error = true
+		responseBody.Message = "Invalid token format"
+		responseBody.Status = false
+		responseBody.ErrorMessage = err.Error()
+		ctx.JSON(http.StatusBadRequest, responseBody)
+		return
+	}
+
+	valid, err := user.VerifyToken(token)
+	if err != nil || !valid {
+		responseBody.Error = true
+		responseBody.Message = "Could not verify token"
+		responseBody.Status = false
+		if err != nil {
+			responseBody.ErrorMessage = err.Error()
+		}
+		ctx.JSON(http.StatusNotFound, responseBody)
+		return
+	}
+
+	responseBody.Error = false
+	responseBody.Message = "Token verified"
+	responseBody.Status = true
+	responseBody.Data = user
+	ctx.JSON(http.StatusOK, responseBody)
 }
