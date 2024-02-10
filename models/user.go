@@ -203,9 +203,28 @@ func (u *User) background(fn func()) {
 	}()
 }
 
-func (u *User) VerifyToken(token int) {
-	// verify token
+func (u *User) VerifyToken(token int) (bool, error) {
+	query := `
+    SELECT expire_at FROM user_tokens WHERE user_id = ? AND token = ?
+    `
+	stmt, err := database.DB.Prepare(query)
+	if err != nil {
+		return false, err
+	}
 
+	defer stmt.Close()
+
+	var expireAt time.Time
+	err = stmt.QueryRow(u.Id, token).Scan(&expireAt)
+	if err != nil {
+		return false, err
+	}
+
+	if time.Now().After(expireAt) {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 //func (u *User) ValidateUserCredential() error {
