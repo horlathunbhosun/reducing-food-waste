@@ -57,6 +57,14 @@ func VerificationToken(ctx *gin.Context) {
 	var responseBody response.JsonResponse
 
 	tokenStr := ctx.Param("token")
+	if tokenStr == "" {
+		responseBody.Error = true
+		responseBody.Message = "Token not provided"
+		responseBody.Status = false
+		ctx.JSON(http.StatusBadRequest, responseBody)
+		return
+	}
+
 	token, err := strconv.Atoi(tokenStr)
 	if err != nil {
 		responseBody.Error = true
@@ -75,13 +83,12 @@ func VerificationToken(ctx *gin.Context) {
 		if err != nil {
 			responseBody.ErrorMessage = err.Error()
 		}
-		ctx.JSON(http.StatusNotFound, responseBody)
+		ctx.JSON(http.StatusBadRequest, responseBody)
 		return
 	}
 
 	responseBody.Error = false
 	responseBody.Message = "Token verified"
 	responseBody.Status = true
-	responseBody.Data = user
 	ctx.JSON(http.StatusOK, responseBody)
 }

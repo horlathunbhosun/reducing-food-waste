@@ -204,7 +204,7 @@ func (u *User) background(fn func()) {
 
 func (u *User) VerifyToken(token int) (bool, error) {
 	query := `
-    SELECT expire_at FROM user_tokens WHERE user_id = ? AND token = ?
+    SELECT expire_at, user_id FROM user_tokens WHERE  token = ?
     `
 	stmt, err := database.DB.Prepare(query)
 	if err != nil {
@@ -214,17 +214,83 @@ func (u *User) VerifyToken(token int) (bool, error) {
 	defer stmt.Close()
 
 	var expireAt time.Time
-	err = stmt.QueryRow(u.Id, token).Scan(&expireAt)
+	var userId int64
+	err = stmt.QueryRow(token).Scan(&expireAt, &userId)
 	if err != nil {
 		return false, err
 	}
 
-	if time.Now().After(expireAt) {
-		return false, nil
+	if userId == 0 {
+		return false, errors.New("token not found with user id")
+	}
+
+	fmt.Println(expireAt, userId)
+	expirationTime := expireAt.Add(3 * 24 * time.Hour)
+
+	if time.Now().After(expirationTime) {
+		return false, errors.New("token expired")
+	}
+
+	err = getUserWithIdAndUpdateFieldReturnUser(userId, "status", "active")
+	if err != nil {
+		return false, err
+	}
+	err = deleteUserToken(token)
+	if err != nil {
+		return false, err
 	}
 
 	return true, nil
 }
+
+func deleteUserToken(token int) error {
+	query := `
+	DELETE FROM user_tokens WHERE token = ?
+	`
+	stmt, err := database.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getUserWithIdAndUpdateFieldReturnUser(userId int64, field string, value string) error {
+	query := fmt.Sprintf("UPDATE users SET %s = ? WHERE id = ?", field)
+	stmt, err := database.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(value, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//func getUserWithAnd(userId int64) (*User, error) {
+//	query := "SELECT id, fullname, email, phone_number, user_type FROM users WHERE id = ?"
+//	row := database.DB.QueryRow(query, userId)
+//
+//	var user User
+//	err := row.Scan(&user.Id, &user.FullName, &user.Email, &user.PhoneNumber, &user.UserType)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return &user, nil
+//}
 
 //func (u *User) ValidateUserCredential() error {
 //	query := "SELECT id,password FROM users WHERE email=?"

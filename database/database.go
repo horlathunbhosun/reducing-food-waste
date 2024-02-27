@@ -50,6 +50,7 @@ func createUsersTable() {
     fullname VARCHAR(30) NOT NULL,
     email VARCHAR(255) UNIQUE,
     phone_number VARCHAR(40) UNIQUE,
+	status ENUM('active', 'inactive') DEFAULT 'inactive',
     user_type ENUM('waste_warrior', 'partners', 'admin') NOT NULL,
     date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 	date_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

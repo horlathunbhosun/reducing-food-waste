@@ -31,7 +31,7 @@ func RegisterRoutes(server *gin.Engine) {
 		c.JSON(http.StatusOK, responseBody)
 	})
 	v1.POST("/register", handlers.Signup)
-	v1.POST("/verify-token/:token", handlers.VerificationToken)
+	v1.PATCH("/verify-token/:token", handlers.VerificationToken)
 
 	v1.GET("/products")
 }
