@@ -34,18 +34,18 @@ func Signup(ctx *gin.Context) {
 		return
 	}
 
-	err = user.Save()
+	err = user.CreateToken()
 	if err != nil {
 		fmt.Println(err)
 		responseBody.Error = true
-		responseBody.Message = "Could not save user. Try again"
+		responseBody.Message = "Could not send reset token. Try again"
 		responseBody.Status = false
 		responseBody.ErrorMessage = err
 		ctx.JSON(http.StatusInternalServerError, responseBody)
 		return
 	}
 	responseBody.Error = false
-	responseBody.Message = "Registration successful"
+	responseBody.Message = "Reset Token sent successful"
 	responseBody.Status = true
 	responseBody.Data = user
 
@@ -91,4 +91,63 @@ func VerificationToken(ctx *gin.Context) {
 	responseBody.Message = "Token verified"
 	responseBody.Status = true
 	ctx.JSON(http.StatusOK, responseBody)
+}
+
+func ResetToken(ctx *gin.Context) {
+	var user models.User
+	var responseBody response.JsonResponse
+
+	err := ctx.ShouldBindJSON(&user)
+
+	v := validator.New()
+
+	if models.ValidateEmail(v, user.Email); !v.Valid() {
+		responseBody.Error = true
+		responseBody.ErrorMessage = v.Errors
+		responseBody.Status = false
+		ctx.JSON(http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusBadRequest, responseBody)
+		return
+	}
+
+	exists, err := user.CheckUserWithEmailExists(user.Email)
+	if err != nil {
+		// handle error
+		responseBody.Error = true
+		responseBody.Message = "Error checking user"
+		responseBody.Status = false
+		responseBody.ErrorMessage = err.Error()
+		ctx.JSON(http.StatusInternalServerError, responseBody)
+		return
+	}
+
+	if !exists {
+		responseBody.Error = true
+		responseBody.Message = "User with email does not exist"
+		responseBody.Status = false
+		ctx.JSON(http.StatusBadRequest, responseBody)
+		return
+	}
+
+	err = user.Save()
+	if err != nil {
+		fmt.Println(err)
+		responseBody.Error = true
+		responseBody.Message = "Could not save user. Try again"
+		responseBody.Status = false
+		responseBody.ErrorMessage = err
+		ctx.JSON(http.StatusInternalServerError, responseBody)
+		return
+	}
+	responseBody.Error = false
+	responseBody.Message = "Registration successful"
+	responseBody.Status = true
+	responseBody.Data = user
+
+	ctx.JSON(http.StatusCreated, responseBody)
 }

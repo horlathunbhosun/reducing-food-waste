@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/horlathunbhosun/reducing-food-waste/database"
@@ -117,14 +118,34 @@ func (u *User) Save() error {
 }
 
 func (u *User) CreateToken() error {
-	query := `
+	// Check if a token for the user already exists
+	query := "SELECT id FROM user_tokens WHERE user_id = ?"
+	row := database.DB.QueryRow(query, u.Id)
+
+	var id int64
+	err := row.Scan(&id)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	// If a token exists, delete it
+	if err != sql.ErrNoRows {
+		query = "DELETE FROM user_tokens WHERE id = ?"
+		_, err = database.DB.Exec(query, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Create a new token for the user
+	query = `
 	INSERT INTO user_tokens (user_id, email, token, expire_at)
 	VALUES (?, ?, ?, ?)
 	`
 
 	stmt, err := database.DB.Prepare(query)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer stmt.Close()
@@ -141,9 +162,6 @@ func (u *User) CreateToken() error {
 		ExpireAt: expiredAt,
 	}
 
-	fmt.Println("GOtten here")
-	fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
-
 	u.background(func() {
 		data := map[string]interface{}{
 			"userName": u.FullName,
@@ -151,8 +169,6 @@ func (u *User) CreateToken() error {
 			"Code":     userToken.Token,
 			"ExpireAt": expiredAt,
 		}
-		fmt.Sprintf("sending email %s with token %x", userToken.Email, userToken.Token)
-		fmt.Println("GOtten here2")
 
 		host := os.Getenv("MAIL_HOST")
 		portConv := os.Getenv("MAIL_PORT")
@@ -167,20 +183,15 @@ func (u *User) CreateToken() error {
 			return
 		}
 	})
-	//err := mailer.Mailer.Send()
-	//if err != nil {
-	//	return err
-	//}
 
 	result, err := stmt.Exec(userToken.UserID, userToken.Email, userToken.Token, userToken.ExpireAt)
 	if err != nil {
 		return err
 	}
 
-	id, err := result.LastInsertId()
+	id, err = result.LastInsertId()
 	userToken.Id = id
 
-	fmt.Println(err)
 	if err != nil {
 		return err
 	}
@@ -277,6 +288,20 @@ func getUserWithIdAndUpdateFieldReturnUser(userId int64, field string, value str
 	}
 
 	return nil
+}
+
+func (u *User) CheckUserWithEmailExists(email string) (bool, error) {
+	query := "SELECT id FROM users WHERE email = ?"
+	row := database.DB.QueryRow(query, email)
+
+	var id int64
+	err := row.Scan(&id)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
 }
 
 //func getUserWithAnd(userId int64) (*User, error) {
