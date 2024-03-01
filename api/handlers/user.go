@@ -134,7 +134,7 @@ func ResetToken(ctx *gin.Context) {
 		return
 	}
 
-	err = user.Save()
+	err = user.CreateToken()
 	if err != nil {
 		fmt.Println(err)
 		responseBody.Error = true
