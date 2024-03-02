@@ -117,7 +117,6 @@ func ResetToken(ctx *gin.Context) {
 
 	exists, err := user.CheckUserWithEmailExists(user.Email)
 	if err != nil {
-		// handle error
 		responseBody.Error = true
 		responseBody.Message = "Error checking user"
 		responseBody.Status = false
@@ -125,7 +124,6 @@ func ResetToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, responseBody)
 		return
 	}
-
 	if !exists {
 		responseBody.Error = true
 		responseBody.Message = "User with email does not exist"
